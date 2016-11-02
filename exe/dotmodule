@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require 'dotmodule'
+
+DotModule::CLI.start(ARGV)
