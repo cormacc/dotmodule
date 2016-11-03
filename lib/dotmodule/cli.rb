@@ -2,25 +2,27 @@ require 'thor'
 
 module DotModule
   class CLI < Thor
-    desc "install", "Install one or more modules"
+    desc 'install', 'Install one or more modules'
     # option :modules, :type => :array
     def install(*modules)
-      # DotModule::install_all
-      if modules.size == 0
-        puts ""
-        DotModule::install_all if ask("No module argument passed. Install (a)ll/(n)one? [n]:") == 'a'
-      else
-        puts "Installing #{modules.size} modules..."
-        modules.each do |m|
-          begin
-            DotModule::install(m)
-          rescue ArgumentError
-            puts "WARNING: Module '#{m}' not found"
-            break unless ask("... (a)bort or (c)ontinue [a]: ") == 'c'
-          end
-        end
+      collection = DotModule::Collection.new(Dir.pwd)
+      if modules.size.zero?
+        modules = case ask("#{collection}\nNo module argument passed. Install (c)ore/(a)ll/(n)one? [n]:").downcase
+                  when 'a'
+                    collection.modules
+                  when 'c'
+                    collection.core_modules
+                  else #none
+                    []
+                  end
       end
+      collection.install_modules(modules)
+    end
+
+    desc 'info', 'List module collection details'
+    def info
+      collection = DotModule::Collection.new(Dir.pwd)
+      puts collection
     end
   end
-
 end
