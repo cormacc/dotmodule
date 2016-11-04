@@ -49,7 +49,7 @@ module DotModule
     # Currently, this supports a single array entry listing any folders shared with other applications / the system
     def load_config
       file = root+CONFIG_FILE_NAME
-      @config = file.file? ? YAML.load_file(file) : { :shared_directories => nil, :core_modules => nil }
+      @config = file.file? ? YAML.load_file(file) : { :shared_directories => [], :core_modules => [] }
     end
     
     def modules
@@ -65,7 +65,7 @@ module DotModule
     end
 
     def default_target
-      @root.parent
+      Pathname.new(Dir.home)
     end
 
     def create_shared_directories(target_root)
@@ -104,19 +104,20 @@ module DotModule
     end
 
     def to_s
-      <<~HEREDOC
+      # <<~HEREDOC would be nicer, but not worth sacrificing compatibility with rubies <2.3 for
+      <<-HEREDOC
 
-      Collection root:    #{@root}
-      Default target:     #{default_target}
+ Collection root:    #{@root}
+ Default target:     #{default_target}
 
-      Shared target subdirectories:
-        #{shared_directories.join(', ')}
+ Shared target subdirectories:
+   #{shared_directories.join(', ')}
 
-      Modules:
-        #{modules.join(', ')}
+ Modules:
+   #{modules.join(', ')}
 
-      Core modules:
-        #{core_modules.join(', ')}
+ Core modules:
+   #{core_modules.join(', ')}
 
       HEREDOC
     end
@@ -133,10 +134,7 @@ module DotModule
 
     def runhook(module_name, hook)
       hook_file = @root + "#{module_name}-#{hook}"
-      unless hook_file.file?
-        puts "... skipping hook '#{hook}': '#{hook_file}' not found"
-        return
-      end
+      return unless hook_file.file?
       puts "... running hook '#{hook}': '#{hook_file}'"
       IO.popen("sh #{hook_file}").each do |line|
         puts ".... #{line}"
