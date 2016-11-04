@@ -80,10 +80,11 @@ module DotModule
 
     def install_module(name, target=default_target)
       create_shared_directories(target)
-      puts "... installing #{name} ..."
+      puts ".. Module #{name} .."
       raise ArgumentError, "Module '#{name}' not found" unless (@root+name).directory?
-
+      preinstall(name)
       system "stow -d #{@root} -t #{target} #{name}"
+      postinstall(name)
     end
 
     def install_modules(module_names, target=default_target)
@@ -118,6 +119,28 @@ module DotModule
         #{core_modules.join(', ')}
 
       HEREDOC
+    end
+
+    private
+
+    def preinstall(module_name)
+      runhook(module_name, 'pre')
+    end
+
+    def postinstall(module_name)
+      runhook(module_name, 'post')
+    end
+
+    def runhook(module_name, hook)
+      hook_file = @root + "#{module_name}-#{hook}"
+      unless hook_file.file?
+        puts "... skipping hook '#{hook}': '#{hook_file}' not found"
+        return
+      end
+      puts "... running hook '#{hook}': '#{hook_file}'"
+      IO.popen("sh #{hook_file}").each do |line|
+        puts ".... #{line}"
+      end
     end
   end
 
